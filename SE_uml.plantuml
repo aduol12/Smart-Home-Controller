@@ -1,0 +1,226 @@
+@startuml "Smart Home Controller System"
+
+' Interfaces
+interface Device {
+  +turnOn()
+  +turnOff()
+  +isOn()
+  +getName()
+}
+
+interface Observer {
+  +update(deviceName, status, message)
+}
+
+interface Subject {
+  +registerObserver(observer)
+  +removeObserver(observer)
+  +notifyObservers(deviceName, status, message)
+}
+
+interface AutomationMode {
+  +getName()
+  +apply(controller)
+}
+
+' Device Implementations
+class Light {
+  -name
+  -status
+  -brightness
+  +Light(name)
+  +turnOn()
+  +turnOff()
+  +isOn()
+  +getName()
+  +setBrightness(brightness)
+  +getBrightness()
+}
+
+class AirConditioner {
+  -name
+  -status
+  -temperature
+  -mode
+  +AirConditioner(name)
+  +turnOn()
+  +turnOff()
+  +isOn()
+  +getName()
+  +setTemperature(temperature)
+  +getTemperature()
+  +setMode(mode)
+  +getMode()
+}
+
+class Door {
+  -name
+  -status
+  -locked
+  +Door(name)
+  +turnOn()
+  +turnOff()
+  +isOn()
+  +getName()
+  +lock()
+  +unlock()
+  +isLocked()
+}
+
+' Decorator Pattern
+abstract class DeviceDecorator {
+  #device
+  +DeviceDecorator(device)
+  +turnOn()
+  +turnOff()
+  +isOn()
+  +getName()
+}
+
+class MotionSensorDecorator {
+  -timer
+  -autoOffDelay
+  +MotionSensorDecorator(device, autoOffDelay)
+  +motionDetected()
+  -resetTimer()
+  +setAutoOffDelay(seconds)
+  +getAutoOffDelay()
+}
+
+class EnergySaverDecorator {
+  -energySaverMode
+  +EnergySaverDecorator(device)
+  +turnOn()
+  +setEnergySaverMode(enabled)
+  -applyEnergySavingSettings()
+  +isEnergySaverModeEnabled()
+}
+
+' Room Class
+class Room {
+  -name
+  -devices
+  +Room(name)
+  +getName()
+  +addDevice(device)
+  +removeDevice(device)
+  +getDevices()
+  +getDevice(deviceName)
+  +turnOnAllDevices()
+  +turnOffAllDevices()
+  +getDevicesOfType(deviceClass)
+}
+
+' Singleton Controller
+class SmartHomeController {
+  -static instance
+  -devices
+  -rooms
+  -observers
+  -currentMode
+  -SmartHomeController()
+  +static getInstance()
+  +addDevice(device)
+  +removeDevice(deviceName)
+  +getDevice(deviceName)
+  +getAllDevices()
+  +turnOnDevice(deviceName)
+  +turnOffDevice(deviceName)
+  +turnOnAllDevices()
+  +turnOffAllDevices()
+  +createRoom(roomName)
+  +getRoom(roomName)
+  +getAllRooms()
+  +addDeviceToRoom(deviceName, roomName)
+  +turnOnRoom(roomName)
+  +turnOffRoom(roomName)
+  +setAutomationMode(mode)
+  +getCurrentMode()
+}
+
+' Observer Implementation
+class Logger {
+  -LOG_FILE
+  -dateFormat
+  +Logger()
+  +update(deviceName, status, message)
+  +clearLog()
+}
+
+' Automation Modes (Strategy Pattern)
+class NightMode {
+  -NIGHT_TEMPERATURE
+  +getName()
+  +apply(controller)
+}
+
+class MovieMode {
+  -MOVIE_TEMPERATURE
+  -LIGHT_BRIGHTNESS
+  +getName()
+  +apply(controller)
+}
+
+class VacationMode {
+  -MIN_TEMPERATURE
+  -MAX_TEMPERATURE
+  -simulationTimer
+  -random
+  +getName()
+  +apply(controller)
+  -simulateOccupancy(controller)
+  +cancelSimulation()
+}
+
+' Factory
+class DeviceFactory {
+  +static createDevice(type, name)
+  +static createMotionSensorDevice(type, name, autoOffDelay)
+  +static createEnergySaverDevice(type, name)
+  +static createSmartDevice(type, name, autoOffDelay)
+}
+
+' Main Application
+class Main {
+  +main(args)
+  -resetDevices(controller)
+}
+
+' Relationships
+Device <|.. Light
+Device <|.. AirConditioner
+Device <|.. Door
+Device <|.. DeviceDecorator
+DeviceDecorator <|-- MotionSensorDecorator
+DeviceDecorator <|-- EnergySaverDecorator
+Observer <|.. Logger
+Subject <|.. SmartHomeController
+AutomationMode <|.. NightMode
+AutomationMode <|.. MovieMode
+AutomationMode <|.. VacationMode
+
+DeviceDecorator o-- Device
+SmartHomeController o-- Device
+SmartHomeController o-- Observer
+SmartHomeController o-- Room
+SmartHomeController o-- AutomationMode
+Room o-- Device
+
+DeviceFactory ..> Light
+DeviceFactory ..> AirConditioner
+DeviceFactory ..> Door
+DeviceFactory ..> MotionSensorDecorator
+DeviceFactory ..> EnergySaverDecorator
+
+Main ..> SmartHomeController
+Main ..> DeviceFactory
+Main ..> AutomationMode
+
+' Design Pattern Notes
+note right of Subject : Observer Pattern
+note right of SmartHomeController : Singleton Pattern
+note right of DeviceDecorator : Decorator Pattern
+note right of DeviceFactory : Factory Pattern
+note right of AutomationMode : Strategy Pattern
+
+@enduml

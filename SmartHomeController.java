@@ -5,18 +5,39 @@ import java.util.Map;
 
 /**
  * Main controller for the smart home system.
- * Manages devices and implements the Subject interface to provide observer pattern functionality.
+ * Implements the Singleton pattern to ensure only one instance exists.
+ * Also implements the Subject interface to provide observer pattern functionality.
  */
 public class SmartHomeController implements Subject {
+    // Singleton instance
+    private static SmartHomeController instance;
+    
     private final Map<String, Device> devices;
+    private final Map<String, Room> rooms;
     private final List<Observer> observers;
+    private AutomationMode currentMode;
     
     /**
-     * Creates a new SmartHomeController.
+     * Private constructor to prevent instantiation outside of this class.
+     * Part of the Singleton pattern implementation.
      */
-    public SmartHomeController() {
+    private SmartHomeController() {
         this.devices = new HashMap<>();
+        this.rooms = new HashMap<>();
         this.observers = new ArrayList<>();
+        this.currentMode = null;
+    }
+    
+    /**
+     * Gets the singleton instance of the SmartHomeController.
+     * Creates it if it doesn't exist yet.
+     * @return The singleton instance of SmartHomeController
+     */
+    public static SmartHomeController getInstance() {
+        if (instance == null) {
+            instance = new SmartHomeController();
+        }
+        return instance;
     }
     
     /**
@@ -110,6 +131,115 @@ public class SmartHomeController implements Subject {
             device.turnOff();
             notifyObservers(device.getName(), device.isOn(), "Device turned OFF (mass action)");
         }
+    }
+    
+    /**
+     * Creates a new room.
+     * @param roomName The name of the room to create.
+     * @return The newly created room.
+     */
+    public Room createRoom(String roomName) {
+        Room room = new Room(roomName);
+        rooms.put(roomName, room);
+        System.out.println("Room created: " + roomName);
+        return room;
+    }
+    
+    /**
+     * Gets a room by name.
+     * @param roomName The name of the room.
+     * @return The room, or null if not found.
+     */
+    public Room getRoom(String roomName) {
+        return rooms.get(roomName);
+    }
+    
+    /**
+     * Gets all rooms.
+     * @return A list of all rooms.
+     */
+    public List<Room> getAllRooms() {
+        return new ArrayList<>(rooms.values());
+    }
+    
+    /**
+     * Adds a device to a room.
+     * @param deviceName The name of the device to add.
+     * @param roomName The name of the room to add the device to.
+     * @return true if the device was added, false if the device or room was not found.
+     */
+    public boolean addDeviceToRoom(String deviceName, String roomName) {
+        Device device = devices.get(deviceName);
+        Room room = rooms.get(roomName);
+        
+        if (device == null) {
+            System.out.println("Device not found: " + deviceName);
+            return false;
+        }
+        
+        if (room == null) {
+            System.out.println("Room not found: " + roomName);
+            return false;
+        }
+        
+        room.addDevice(device);
+        return true;
+    }
+    
+    /**
+     * Turns on all devices in a room.
+     * @param roomName The name of the room.
+     * @return true if the room was found, false otherwise.
+     */
+    public boolean turnOnRoom(String roomName) {
+        Room room = rooms.get(roomName);
+        if (room == null) {
+            System.out.println("Room not found: " + roomName);
+            return false;
+        }
+        
+        System.out.println("Turning on all devices in room: " + roomName);
+        room.turnOnAllDevices();
+        return true;
+    }
+    
+    /**
+     * Turns off all devices in a room.
+     * @param roomName The name of the room.
+     * @return true if the room was found, false otherwise.
+     */
+    public boolean turnOffRoom(String roomName) {
+        Room room = rooms.get(roomName);
+        if (room == null) {
+            System.out.println("Room not found: " + roomName);
+            return false;
+        }
+        
+        System.out.println("Turning off all devices in room: " + roomName);
+        room.turnOffAllDevices();
+        return true;
+    }
+    
+    /**
+     * Sets the current automation mode.
+     * @param mode The automation mode to set.
+     */
+    public void setAutomationMode(AutomationMode mode) {
+        this.currentMode = mode;
+        if (mode != null) {
+            System.out.println("Activating automation mode: " + mode.getName());
+            mode.apply(this);
+        } else {
+            System.out.println("Automation mode disabled");
+        }
+    }
+    
+    /**
+     * Gets the current automation mode.
+     * @return The current automation mode, or null if none is active.
+     */
+    public AutomationMode getCurrentMode() {
+        return currentMode;
     }
     
     @Override
